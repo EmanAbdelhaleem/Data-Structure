@@ -1,0 +1,150 @@
+#include <iostream>
+#include<vector>
+using namespace std;
+
+int hash_string(string s,int n) {
+    long long sum = 0;
+    for (int i = 0; i < s.size(); i++)
+    {
+        if(s[i] >= 'a' && s[i] <= 'z')
+            sum += (long long)(s[i]-'a') * pow(62, s.size() - 1 - i);
+        else if (s[i] >= 'A' && s[i] <= 'Z')
+            sum += (long long)(s[i] - 'A') * pow(62, s.size() - 1 - i);
+        else 
+            sum += (long long)(s[i] - '0') * pow(62, s.size() - 1 - i);
+    }
+    return sum % n;
+}
+int hash_string_128radix(string s, int n) {
+    long long sum = 0;
+    for (int i = 0; i < s.size(); i++)
+    {
+        sum += (long long)(s[i])* pow(128, s.size() - 1 - i);
+    }
+    return sum % n;
+}
+
+int string_folding(string s, int n) {
+    int loops = s.size() / 4, i = 0;
+    long long sum = 0, hashes = 0, n2 = n;
+    while (loops--)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            sum += s[i] * 26 + (s[i] - 'a') % n2;
+            i++;
+        }
+        sum %= n2;
+        hashes += sum;
+    }
+    while (i < s.size()) {
+        sum += s[i] * 26 + (s[i] - 'a') % n2;
+        i++;
+    }
+    sum %= n2;
+    hashes += sum;
+    hashes %= n2;
+}
+
+int hash_num(int a, int n) {
+    long long n2 = n;
+    return (a % n2 + n2) % n2;
+}
+
+
+struct PhoneEntry {
+	const static int INTERNAL_LIMIT = 65407;
+	string name;			// key
+	string phone_number;	// data
+
+	int hash() {
+		return hash_string(name, INTERNAL_LIMIT);
+	}
+
+	PhoneEntry(string name, string phone_number) :
+		name(name), phone_number(phone_number) {
+	}
+
+	void print() {
+		cout << "(" << name << ", " << phone_number << ")  ";
+	}
+};
+
+class PhoneHashTable {
+private:
+	int table_size;
+	vector<vector<PhoneEntry>> table;
+	// we can use others: e.g. list<PhoneEntry>
+public:
+	PhoneHashTable(int table_size, double limit_load_factor = 0.75) :
+		table_size(table_size) {
+		if (PhoneEntry::INTERNAL_LIMIT / (double)table_size > limit_load_factor)
+		{
+			table_size *= 2;
+			Rehashing();
+		}
+		else
+			table.resize(table_size);
+	}
+
+	bool get(PhoneEntry& phone) {
+		int idx = phone.hash() % table_size;
+
+		for (int i = 0; i < (int)table[idx].size(); ++i) {
+			if (table[idx][i].name == phone.name) {
+				phone = table[idx][i];
+				return true;
+			}
+		}
+		return false;
+	}
+	void Rehashing() {
+		vector<vector<PhoneEntry>> newTable(2 * table_size);
+		for (int i = 0; i < table.size(); i++)
+		{
+			for (int j = 0; j < table[i].size(); i++)
+			{
+				PhoneEntry current = table[i][j];
+				int idx = current.hash() % table_size;
+				newTable[idx].push_back(current);
+			}
+		}
+		table = newTable;
+	}
+	void put(PhoneEntry phone) {
+		int idx = phone.hash() % table_size;
+
+		for (int i = 0; i < (int)table[idx].size(); ++i) {
+			if (table[idx][i].name == phone.name) {
+				table[idx][i] = phone; // exist => update
+				return;
+			}
+		}
+		table[idx].push_back(phone);
+	}
+
+	bool remove(PhoneEntry phone) {
+		int idx = phone.hash() % table_size;
+		for (int i = 0; i < (int)table[idx].size(); ++i) {
+			if (table[idx][i].name == phone.name) {
+				// Swap with last and remove last in O(1)
+				swap(table[idx][i], table[idx].back());
+				table[idx].pop_back();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void print_all() {
+		for (int hash = 0; hash < table_size; ++hash) {
+			if (table[hash].size() == 0)
+				continue;
+
+			cout << "Hash " << hash << ": ";
+			for (int i = 0; i < (int)table[hash].size(); ++i)
+				table[hash][i].print();
+			cout << "\n";
+		}
+	}
+};
