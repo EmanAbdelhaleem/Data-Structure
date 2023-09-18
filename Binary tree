@@ -1,0 +1,274 @@
+#include<bits/stdc++.h>
+#include<bitset>
+#define ll long long
+#define ull unsigned long long
+#define d double
+#define ld long double
+#define int long long
+#define en "\n"
+#define f first
+#define se second
+#define pb push_back
+#define all(v) v.begin(),v.end()
+#define loop(i,n) for(int i = 0; i < n; i++)
+#define yes cout<<"YES\n"
+#define no cout<<"NO\n"
+
+using namespace std;
+void fast(){ios::sync_with_stdio(0);cin.tie(0);cout.tie(0);}
+void files()
+{
+    freopen("black2.in", "r", stdin);
+    //freopen("output.txt", "w", stdout);
+}
+
+const int mod = 1e9+7;
+
+/*
+ * function: I want to implement a binary tree, the binary tree has a root node, these nodes are connected by
+ * edges to another nodes, mostly two, every node has a value and two pointers for left and right
+ * functions needed: const, dest, add, remove;
+ * precondition:
+ * postconditions:
+ */
+
+
+class binary_tree{
+private:
+    struct node{
+        node* left {};
+        node* right {};
+        int value {};
+
+        node(int data) : value(data){} //Member intialization list
+    };
+    node* root;
+    int nodes_number{};
+public:
+    binary_tree(int root_value) : root(new node(root_value)){
+        nodes_number++;//cons
+    }
+    ~binary_tree(){
+        clear(root);
+    } //dest
+
+    void print_intorder(node* node){
+        //cout<<"Bla";
+        if(!node) return;
+        print_intorder(node->left);
+        cout<<node->value<<" ";
+        print_intorder(node->right);
+    }
+
+    node* getRoot(){
+        return root;
+    };
+    void add_node(vector<int> path, string dir) {
+        node* current = root;
+        for (int i = 1; i < path.size(); i++) {
+            if (dir[i-1] == 'L') {
+                if(!current->left){
+                    current->left = new node(path[i]);
+                    nodes_number++;
+                }
+                current = current->left; //don't forget this
+            }else{
+                if(!current->right){
+                    current->right = new node(path[i]);
+                    nodes_number++;
+                }
+                current = current->right;
+            }
+        }
+    }
+
+    int max_element(node* current){
+        if(!current) return -1;
+        int res = current->value;
+        res = max(max_element(current->left),res);
+        res = max(max_element(current->right),res);
+        return res;
+    }
+
+    int tree_height(node* current){
+        if(!current) return 0;
+        int res = 0;
+        res = ((!(current->left))?0:1+ tree_height(current->left));
+        res = max(res, (!current->right)?0:1+ tree_height(current->right));
+
+        return res;
+    }
+
+    int count_nodes(node* current){
+        if(!current) return 0;
+        int res = 1;
+        res += count_nodes(current->left);
+        res += count_nodes(current->right);
+        return res;
+    }
+
+    int getNodes_number() const{
+        return nodes_number;
+    }
+
+    int count_leaves(node* current){
+        if(!current) return 0;
+
+        int res = 0;
+        if(!current->left && !current->right) res++;
+        else{
+            res += count_leaves(current->left)+ count_leaves(current->right);
+        }
+        return res;
+    }
+
+    bool is_exist(node* current,int value){
+        if(!current) return 0;
+
+        bool res = 0;
+        if(current->value == value) res = 1;
+        res |= is_exist(current->left,value);
+        res |= is_exist(current->right,value);
+
+        return res;
+    }
+
+//    bool is_perfect(node* current){
+//        if(!current) return 0;
+//        int height = tree_height(root);
+//        int current_height = 0;
+//        int res = 0;
+//        while(current->left){
+//            current = current->left;
+//            current_height++;
+//        }
+//        while(current->right){
+//            current = current->right;
+//            current_height++;
+//        }
+//        if(current_height == 2*height) res+=2;
+//        res+= is_perfect(current->right);
+//        res+= is_perfect(current->right);
+//        return res == pow(2,height);
+//    }
+
+    bool is_perfect2(){
+        int heightOfTree = tree_height(root);
+        return nodes_number == pow(2,heightOfTree+1) -1;
+    }
+
+    void clear(node* current){
+        if(!current) return;
+
+        if(current-> left){
+            delete current->left;
+            current->left = nullptr;
+        }
+
+        if(current-> right){
+            delete current-> right;
+            current->left= current->right;
+        }
+    }
+
+    void print_inorder_iterative(){
+        stack<pair<node*,bool>> st;
+        st.push({root,0});
+        while(!st.empty()){
+            //pair<node*,bool> current = st.top();
+            node* temp = st.top().first;
+            if(!st.top().second){
+                st.top().second = 1;
+
+                while(temp->left){
+                    st.push({temp->left,1});
+                    temp = temp->left;
+                }
+
+            }
+            cout<<temp->value<<" ";
+            st.pop();
+
+            if(temp->right) st.push({temp->right,0});
+        }
+    }
+
+    void traverse_left_boundry(){
+        node* current = root;
+        while(current){
+            cout<<current->value<<" ";
+            if(!current->left)
+                current = current->right;
+            else current = current->left;
+        }
+    }
+
+
+    void findTreeDiameter(node* current,vector<pair<int,node*>> &v){
+        if(!current) return;
+
+        findTreeDiameter(current->left,v);
+        findTreeDiameter(current->right,v);
+        int res = 1;
+        if(current->left)
+            res += 1+ tree_height(current->left);
+        if(current->right)
+            res += 1 + tree_height(current->right);
+
+        v.push_back({res,current});
+
+    }
+    int node_diameter(node* current){
+        if(!current) return 0;
+
+        int res = 1;
+        res += max(res, node_diameter(current->left));
+        res += max(res, node_diameter(current->right));
+    }
+    void tree_diameter(node* current){// the longest path between two nodes
+        vector<pair<int,node*>> v;
+        findTreeDiameter(current,v);
+        node* ans;
+        int mx = INT_MIN;
+        for(auto i:v){
+            if(i.f > mx) ans = i.se;
+        }
+        cout <<ans->value<<" "<<v[0].f<<" ";
+    }
+};
+
+
+void fly(){
+
+    binary_tree tree(1);
+    tree.add_node({1,2,4,7},"LLL");
+    tree.add_node({1,2,4,8},"LLR");
+    tree.add_node({1,3,17,20},"RRR");
+    tree.add_node({1,2,6,9},"LRR");
+    tree.add_node({1,2,6,10,23},"LRLR");
+//    tree.print_intorder(tree.getRoot());
+//    cout<<en;
+//    cout<<tree.max_element(tree.getRoot())<<en;
+//    cout<<tree.tree_height(tree.getRoot())<<en;
+//    cout<<tree.count_nodes(tree.getRoot())<<en;
+//    cout<<tree.getNodes_number()<<en;
+//    cout<<tree.count_leaves(tree.getRoot())<<en;
+//    cout<<tree.is_exist(tree.getRoot(),13)<<en;
+//    cout<<tree.is_perfect2()<<en;
+    tree.print_inorder_iterative();
+    cout<<en;
+    tree.traverse_left_boundry();
+    cout<<en;
+    tree.tree_diameter(tree.getRoot());
+}
+
+signed main()
+{
+    //files();
+    fast();
+    int tc = 1; //cin >>tc;
+    while(tc--){
+        fly();
+    }
+    return 0;
+}
